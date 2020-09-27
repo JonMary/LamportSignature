@@ -1,0 +1,82 @@
+import secrets
+import hashlib
+
+def GenerateKey():
+  #roll a random 256bits number
+  def roll ():
+    return secrets.randbits(256)
+
+  privKey = [] #private key
+  pubKey = [] #public key
+
+  runs = 0
+  while(runs < 512):
+    #rolling a random 256bits number each run
+    #add number to private key, hash number (hexadecimals) to public key
+    runs += 1
+    r = str(roll())
+    #print("roll: ", r) uncheck to verify number, hash, keys
+    privKey += [r]
+    pubKey += [hashlib.sha256(bytes(r,"utf-8")).hexdigest()] 
+  return privKey, pubKey
+
+(Private, Public) = GenerateKey()
+#print("**PRIVATE KEY**: ", Private)
+#print("**PUBLIC KEY**: ", Public)
+
+
+def Sign():
+  message = "Hello, sir" #message to sign
+  signature = []
+  tempPrivate = Private[:] #copy of private key
+  hMessage = hashlib.sha256(bytes(message,"utf-8")).hexdigest() #hash message to hex
+
+  #convert hex to binary
+  scale = 16 ## equals to hexadecimal
+  num_of_bits = 8
+  messagebin = bin(int(hMessage, scale))[2:].zfill(num_of_bits)
+
+  #force len = 256 on the binary message
+  while(len(messagebin)<256):
+    messagebin = str(0) + messagebin
+
+  #print("Msg in bits: ", messagebin)
+  #print(len(messagebin))
+  #compare binary hash to private key, make the signature
+  for num in messagebin:
+    signature += [tempPrivate[int(num)]]
+    tempPrivate = tempPrivate[2:]
+  return message, signature
+
+(m, s) = Sign()
+#print("**MESSAGE SIGNATURE**: ", m, s)
+
+
+#CHECK IF SIGNATURE IS TRUE
+def Verify(message, signature, publicKey):
+  #message to sign
+  hMessage = hashlib.sha256(bytes(message,"utf-8")).hexdigest() #hash message to hex
+
+  #convert hex to binary
+  scale = 16 ## equals to hexadecimal
+  num_of_bits = 8
+  messagebin = bin(int(hMessage, scale))[2:].zfill(num_of_bits)
+
+  #force len = 256 on the binary message
+  while(len(messagebin)<256):
+    messagebin = str(0) + messagebin
+  #print(messagebin)
+  runs = 0
+  for num in messagebin:
+    #print(messagebin[runs])
+
+    if publicKey[runs*2 + int(messagebin[runs])] != (hashlib.sha256(bytes(signature[runs],"utf-8")).hexdigest()):
+      #print("public key", publicKey[runs*2 + int(messagebin[runs])])
+      #print(hashlib.sha256(bytes(signature[runs],"utf-8")).hexdigest())
+      return "ERRRRRR!"
+
+    runs += 1
+  return("GOOT MY FRIENT!")
+    
+    
+print(Verify(m, s, Public))
